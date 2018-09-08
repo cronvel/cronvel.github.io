@@ -7,6 +7,9 @@ LANG .default =
 LANG.en = {
 	sunrise: "Sunrise" ,
 	sunset: "Sunset" ,
+
+	moonrise: "Moonrise" ,
+	moonset: "Moonset" ,
 	
 	newMoon: "New Lune" ,
 	fullMoon: "Full Lune" ,

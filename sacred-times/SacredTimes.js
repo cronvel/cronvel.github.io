@@ -55,7 +55,7 @@ Event.sort = function( events ) {
 
 
 
-Event.filterUpToNextMajor = function( events , dateTimeMin ) {
+Event.filter = function( events , dateTimeMin , upToNext , upToNextMajor ) {
 	var event , index ,
 		indexMin = 0 ,
 		indexMax = events.length ;
@@ -68,7 +68,10 @@ Event.filterUpToNextMajor = function( events , dateTimeMin ) {
 		if ( dateTimeMin && event.date < dateTimeMin ) {
 			indexMin = index + 1 ;
 		}
-		else if ( event.isMajor && event.isUpcoming && index + 1 < events.length ) {
+		else if (
+			upToNext &&
+			( ( ! upToNextMajor || event.isMajor ) && event.isUpcoming && index + 1 < events.length )
+		) {
 			indexMax = index + 1 ;
 			break ;
 		}
@@ -79,6 +82,18 @@ Event.filterUpToNextMajor = function( events , dateTimeMin ) {
 	}
 
 	return events ;
+} ;
+
+
+
+Event.filterUpToNext = function( events , dateTimeMin ) {
+	return Event.filter( events , dateTimeMin , true ) ;
+} ;
+
+
+
+Event.filterUpToNextMajor = function( events , dateTimeMin ) {
+	return Event.filter( events , dateTimeMin , true , true ) ;
 } ;
 
 
@@ -556,6 +571,17 @@ SacredTimes.prototype.utcLocalSun = function( dateTime ) {
 
 
 
+SacredTimes.prototype.utcLocalMoon = function( dateTime ) {
+	if ( ! dateTime ) { dateTime = this.universalDateTime.toDate() ; }
+
+	var data = SunCalc.getMoonTimes( dateTime , this.latitude , this.longitude ) ;
+	data = this.toUtc( data ) ;
+
+	return data ;
+} ;
+
+
+
 SacredTimes.prototype.computeSolarDateTime = function() {
 	//console.log( "universalDateTime:" , this.universalDateTime ) ;
 
@@ -693,9 +719,33 @@ SacredTimes.prototype.getSunUpcomingEvents = function( mode = 'legal' ) {
 	
 	sunData = this.utcLocalSun( moment( dateTime ).add( 1 , "day" ) ) ;
 	events.push( new Event( 'sunrise' , sunData.sunrise , sunData.sunrise >= dateTime , false ) ) ;
+	events.push( new Event( 'sunset' , sunData.sunset , sunData.sunset >= dateTime , false ) ) ;
 	
-	events = Event.filterUpToNextMajor( events , moment( dateTime ).subtract( 1 , "hour" ) ) ;
-	events.length = 1 ;
+	events = Event.filter( events , moment( dateTime ).subtract( 2 , "hour" ) ) ;
+	if ( events.length > 2 ) { events.length = 2 ; }
+
+	this.eventsToMode( events , mode ) ;
+
+	return events ;
+} ;
+
+
+
+SacredTimes.prototype.getMoonUpcomingEvents = function( mode = 'legal' ) {
+	var dateTime = this.universalDateTime ,
+		events = [] ,
+		moonData ;
+	
+	moonData = this.utcLocalMoon( dateTime ) ;
+	events.push( new Event( 'moonrise' , moonData.rise , moonData.rise >= dateTime , false ) ) ;
+	events.push( new Event( 'moonset' , moonData.set , moonData.set >= dateTime , false ) ) ;
+	
+	moonData = this.utcLocalMoon( moment( dateTime ).add( 1 , "day" ) ) ;
+	events.push( new Event( 'moonrise' , moonData.rise , moonData.rise >= dateTime , false ) ) ;
+	events.push( new Event( 'moonset' , moonData.set , moonData.set >= dateTime , false ) ) ;
+	
+	events = Event.filter( events , moment( dateTime ).subtract( 2 , "hour" ) ) ;
+	if ( events.length > 2 ) { events.length = 2 ; }
 
 	this.eventsToMode( events , mode ) ;
 
@@ -794,6 +844,7 @@ SacredTimes.prototype.getCelebrationUpcomingEvents = function( mode = 'legal' ) 
 SacredTimes.prototype.getUpcomingEvents = function( mode = 'legal' ) {
 	return Event.merge(
 		this.getSunUpcomingEvents( mode ) ,
+		this.getMoonUpcomingEvents( mode ) ,
 		this.getMoonPhaseUpcomingEvents( mode ) ,
 		this.getSacredTimeUpcomingEvents( mode ) ,
 		this.getCelebrationUpcomingEvents( mode )

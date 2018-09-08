@@ -7,6 +7,9 @@ LANG .fr = {
 	sunrise: "Lever de Soleil" ,
 	sunset: "Coucher de Soleil" ,
 	
+	moonrise: "Lever de Lune" ,
+	moonset: "Coucher de Lune" ,
+	
 	newMoon: "Nouvelle Lune" ,
 	fullMoon: "Pleine Lune" ,
 	firstQuarterMoon: "Premier Quartier" ,
