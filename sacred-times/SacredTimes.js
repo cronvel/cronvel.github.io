@@ -682,6 +682,28 @@ SacredTimes.prototype.getMoonPhase = function() {
 
 
 
+SacredTimes.prototype.getSunUpcomingEvents = function( mode = 'legal' ) {
+	var dateTime = this.universalDateTime ,
+		events = [] ,
+		sunData ;
+	
+	sunData = this.utcLocalSun( dateTime ) ;
+	events.push( new Event( 'sunrise' , sunData.sunrise , sunData.sunrise >= dateTime , false ) ) ;
+	events.push( new Event( 'sunset' , sunData.sunset , sunData.sunset >= dateTime , false ) ) ;
+	
+	sunData = this.utcLocalSun( moment( dateTime ).add( 1 , "day" ) ) ;
+	events.push( new Event( 'sunrise' , sunData.sunrise , sunData.sunrise >= dateTime , false ) ) ;
+	
+	events = Event.filterUpToNextMajor( events , moment( dateTime ).subtract( 1 , "hour" ) ) ;
+	events.length = 1 ;
+
+	this.eventsToMode( events , mode ) ;
+
+	return events ;
+} ;
+
+
+
 SacredTimes.prototype.getMoonPhaseUpcomingEvents = function( mode = 'legal' ) {
 	var dateTime = this.universalDateTime ,
 		events = [] ,
@@ -771,6 +793,7 @@ SacredTimes.prototype.getCelebrationUpcomingEvents = function( mode = 'legal' ) 
 
 SacredTimes.prototype.getUpcomingEvents = function( mode = 'legal' ) {
 	return Event.merge(
+		this.getSunUpcomingEvents( mode ) ,
 		this.getMoonPhaseUpcomingEvents( mode ) ,
 		this.getSacredTimeUpcomingEvents( mode ) ,
 		this.getCelebrationUpcomingEvents( mode )
