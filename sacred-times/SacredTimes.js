@@ -93,7 +93,166 @@ Event.merge = function( ... eventLists ) {
 } ;
 
 
-},{"moment":6}],2:[function(require,module,exports){
+},{"moment":7}],2:[function(require,module,exports){
+/*
+	Sacred Times
+
+	Copyright (c) 2018 Cédric Ronvel
+
+	The MIT License (MIT)
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
+
+	The above copyright notice and this permission notice shall be included in all
+	copies or substantial portions of the Software.
+
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+	SOFTWARE.
+*/
+
+"use strict" ;
+
+
+
+function PseudoDate( data ) {
+	this.date = data.date ;
+
+	this.year = data.year ;
+	this.month = data.month ,
+	this.day = data.day ;
+	this.hour = data.hour ;
+	this.minute = data.minute ;
+	this.second = data.second ;
+
+	this.sunMoodHour = data.sunMoodHour ;
+	this.sunMoodMinute = data.sunMoodMinute ;
+
+	this.moonMoodHour = data.moonMoodHour ;
+	this.moonMoodMinute = data.moonMoodMinute ;
+
+	this._locale = 'en' ;
+}
+
+module.exports = PseudoDate ;
+
+
+
+PseudoDate.prototype.locale = function( locale ) {
+	this.locale = locale ;
+	return this ;
+} ;
+
+
+
+// Lunar month name
+const moonName = [
+	'Prima' , // 1
+	'Diana' , // 2
+	'Tiara' , // 3
+	'Cardina' , // 4
+	'Quintella' , // 5
+	'Sixtina' , // 6
+	'Septima' , // 7
+	'Octavia' , // 8
+	'Nova' , // 9
+	'Decalia' , // 10
+	'Ondina' , // 11
+	'Dominica' , // 12
+	'Théresa' // 13
+] ;
+
+
+
+PseudoDate.prototype.format = function( format ) {
+	/*
+	format.replace( /L+/g , match => {
+		if ( match === 'L' ) {
+			if ( this.locale === 'fr' ) { return 'DD/MM/YYYY' ; }
+			return 'MM/DD/YYYY' ;
+		}
+		if ( match === 'LL' ) {
+			if ( this.locale === 'fr' ) { return 'D MMM YYYY' ; }
+			return 'MMM D, YYYY' ;
+		}
+	} ) ;
+	*/
+
+	return format
+		.replace( /(D+)( *)(M+)/g , ( match , day , spaces , month ) => {
+			return month + spaces + day ;
+		} )
+		.replace( /(H+ *):( *m+)/g , ( match , hour , minute ) => {
+			return hour + '°' + minute ;
+		} )
+		.replace( /\\.|([LlMQDdeEWwYgGAahHkmsSzZxX])\1*/g , match => {
+			if ( match[ 0 ] === '\\' ) { return match.slice( 1 ) ; }
+
+			switch ( match ) {
+				case 'L' :
+				case 'LL' :
+				case 'l' :
+				case 'll' :
+					return moonName[ this.month - 1 ] + ' ' + this.day ;
+				case 'LLL' :
+				case 'LLLL' :
+				case 'lll' :
+				case 'llll' :
+					return moonName[ this.month - 1 ] + ' ' + this.day +
+						this.hour + '°' + ( this.minute < 10 ? '0' : '' ) + this.minute ;
+				case 'D' :
+					return this.day ;
+				case 'DD' :
+					return ( this.day < 10 ? '0' : '' ) + this.day ;
+				case 'M' :
+					return this.month ;
+				case 'MM' :
+					return ( this.month < 10 ? '0' : '' ) + this.month ;
+				case 'MMM' :
+				case 'MMMM' :
+					return moonName[ this.month - 1 ] ;
+				case 'H' :
+				case 'HH' :
+					return this.hour ;
+				case 'm' :
+				case 'mm' :
+					return this.minute ;
+				case 'd' :
+				case 'dd' :
+				case 'ddd' :
+				case 'dddd' :
+					return '' ;
+				default :
+					return '' ;
+					//return '(' + match + ')' ;
+			}
+		} )
+		.replace( /  +/g , ' ' ) ;
+} ;
+
+
+
+PseudoDate.prototype.valueOf = function() {
+	return this.date.valueOf() ;
+} ;
+
+
+
+PseudoDate.prototype.toString = function() {
+	return this.format( 'LLL' ) ;
+} ;
+
+
+},{}],3:[function(require,module,exports){
 /*
 	Sacred Times
 
@@ -129,6 +288,7 @@ const lune = require( 'lune' ) ;
 const SunCalc = require( 'suncalc' ) ;	// This module is used for many calculation, like sunrise and sunset
 const moment = require( 'moment' ) ;
 const Event = require( './Event.js' ) ;
+const PseudoDate = require( './PseudoDate.js' ) ;
 
 
 
@@ -144,10 +304,14 @@ function SacredTimes( dateTime , latitude = DEFAULT_LATITUDE , longitude = DEFAU
 	this.solarDelta = null ;
 	this.solarUtcOffset = null ;
 	this.solarDateTime = null ;
+	this.luniSolarNewYearMoon = null ;
+	this.luniSolarNewYear = null ;
 	this.latitude = latitude ;
 	this.longitude = longitude ;
 
 	this.computeSolarDateTime() ;
+	this.computeLuniSolarNewYear() ;
+	console.log( "luniSolarNewYear" , this.luniSolarNewYear ) ;
 }
 
 module.exports = SacredTimes ;
@@ -168,6 +332,30 @@ SacredTimes.prototype.getSolarDateTime = function() { return this.solarDateTime 
 
 
 
+// This is exactly the Imbolc Sacred Time
+SacredTimes.prototype.computeLuniSolarNewYear = function( dateTime ) {
+	if ( ! dateTime ) { dateTime = this.universalDateTime ; }
+
+	var winterSolstice , moons , delta ;
+
+	winterSolstice = ( new Seasons( dateTime.year() - 1 ) ).winter ;
+	moons = lune.phase_range( winterSolstice , dateTime.toDate() , lune.PHASE_NEW ) ;
+
+	if ( moons.length >= 2 ) {
+		this.luniSolarNewYearMoon = moment.utc( moons[ 1 ] ) ;
+	}
+	else {
+		winterSolstice = ( new Seasons( dateTime.year() - 2 ) ).winter ;
+		moons = lune.phase_range( winterSolstice , dateTime.toDate() , lune.PHASE_NEW ) ;
+		this.luniSolarNewYearMoon = moment.utc( moons[ 1 ] ) ;
+	}
+
+	this.luniSolarNewYearMoon = this.toSolar( this.luniSolarNewYearMoon ) ;
+	this.luniSolarNewYear = this.toNextRisingSun( this.luniSolarNewYearMoon ) ;
+} ;
+
+
+
 /*
 	On pourrait faire commencer toujours le jour d'après.
 	Un jour commencerait à l'aube, l'aube doit nécessairement tomber après le début d'un mois/d'une année.
@@ -179,8 +367,6 @@ SacredTimes.prototype.getSolarDateTime = function() { return this.solarDateTime 
 SacredTimes.prototype.utcYearSacredTimes = function( utcYear ) {
 	if ( utcYear === undefined ) { utcYear = this.universalDateTime.year() ; }
 
-	console.log( this.universalDateTime ) ;
-	console.log( utcYear ) ;
 	var moons ,
 		pastYearSeasons = new Seasons( utcYear - 1 ) ,
 		currentYearSeasons = new Seasons( utcYear ) ,
@@ -228,34 +414,23 @@ SacredTimes.prototype.stYearCelebrationDays = function( utcYear ) {
 		The Imbolc day is the day of the sunrise following the Imbolc Sacred Time (2 hours of tolerance).
 		It is typically celebrated the whole day, starting at the first double-hour (4:00)
 	*/
-	sunData = this.utcLocalSun( stDateTimes.imbolc.toDate() ) ;
-	celebrationDays.imbolc = moment( stDateTimes.imbolc ).hour( 4 )
-		.minute( 0 )
-		.second( 0 )
-		.millisecond( 0 ) ;
-	delta = moment.duration( stDateTimes.imbolc.diff( sunData.sunrise ) ).subtract( 2 , "hours" ) ;
-
-	console.log( "Imbolc comput:" , stDateTimes.imbolc , sunData.sunrise , delta.toISOString() ) ;
-
-	if ( delta.subtract( 2 , "hours" ) > 0 ) {
-		celebrationDays.imbolc.add( 1 , "day" ) ;
-	}
+	celebrationDays.imbolc = this.toNextRisingSun( stDateTimes.imbolc ) ;
 
 	/*
 		The spring equinox day is the day of the sunset following the spring equinox Sacred Time (no tolerance)
 		The spring equinox is celebrated in the morning, at noon and in the afternoon.
 	*/
 	sunData = this.utcLocalSun( stDateTimes.springEquinox.toDate() ) ;
-	celebrationDays.springEquinox = moment( stDateTimes.springEquinox ).hour( 10 )
+	celebrationDays.ostara = moment( stDateTimes.springEquinox ).hour( 10 )
 		.minute( 0 )
 		.second( 0 )
 		.millisecond( 0 ) ;
 	delta = moment.duration( stDateTimes.springEquinox.diff( sunData.sunset ) ) ;
 
-	console.log( "Spring equinox comput:" , stDateTimes.springEquinox , sunData.sunset , delta.toISOString() ) ;
+	//console.log( "Ostara comput:" , stDateTimes.springEquinox , sunData.sunset , delta.toISOString() ) ;
 
 	if ( delta > 0 ) {
-		celebrationDays.springEquinox.add( 1 , "day" ) ;
+		celebrationDays.ostara.add( 1 , "day" ) ;
 	}
 
 	/*
@@ -269,7 +444,7 @@ SacredTimes.prototype.stYearCelebrationDays = function( utcYear ) {
 		.millisecond( 0 ) ;
 	delta = moment.duration( stDateTimes.beltaine.diff( sunData.solarNoon ) ).subtract( 2 , "hours" ) ;
 
-	console.log( "Beltaine comput:" , stDateTimes.beltaine , sunData.solarNoon , delta.toISOString() ) ;
+	//console.log( "Beltaine comput:" , stDateTimes.beltaine , sunData.solarNoon , delta.toISOString() ) ;
 
 	if ( delta > 0 ) {
 		celebrationDays.beltaine.add( 1 , "day" ) ;
@@ -280,16 +455,16 @@ SacredTimes.prototype.stYearCelebrationDays = function( utcYear ) {
 		The summer solstice is celebrated at noon, in the afternoon, and in the evening.
 	*/
 	sunData = this.utcLocalSun( stDateTimes.summerSolstice.toDate() ) ;
-	celebrationDays.summerSolstice = moment( stDateTimes.summerSolstice ).hour( 12 )
+	celebrationDays.litha = moment( stDateTimes.summerSolstice ).hour( 12 )
 		.minute( 0 )
 		.second( 0 )
 		.millisecond( 0 ) ;
 	delta = moment.duration( stDateTimes.summerSolstice.diff( sunData.sunset ) ) ;
 
-	console.log( "Summer solstice comput:" , stDateTimes.summerSolstice , sunData.sunset , delta.toISOString() ) ;
+	//console.log( "Summer solstice comput:" , stDateTimes.summerSolstice , sunData.sunset , delta.toISOString() ) ;
 
 	if ( delta > 0 ) {
-		celebrationDays.summerSolstice.add( 1 , "day" ) ;
+		celebrationDays.litha.add( 1 , "day" ) ;
 	}
 
 	/*
@@ -303,7 +478,7 @@ SacredTimes.prototype.stYearCelebrationDays = function( utcYear ) {
 		.millisecond( 0 ) ;
 	delta = moment.duration( stDateTimes.lugnasad.diff( sunData.sunset ) ).subtract( 2 , "hours" ) ;
 
-	console.log( "Lugnasad comput:" , stDateTimes.lugnasad , sunData.sunset , delta.toISOString() ) ;
+	//console.log( "Lugnasad comput:" , stDateTimes.lugnasad , sunData.sunset , delta.toISOString() ) ;
 
 	if ( delta > 0 ) {
 		celebrationDays.lugnasad.add( 1 , "day" ) ;
@@ -314,16 +489,16 @@ SacredTimes.prototype.stYearCelebrationDays = function( utcYear ) {
 		The autumn equinox is celebrated the morning until noon.
 	*/
 	sunData = this.utcLocalSun( stDateTimes.autumnEquinox.toDate() ) ;
-	celebrationDays.autumnEquinox = moment( stDateTimes.autumnEquinox ).hour( 16 )
+	celebrationDays.mabon = moment( stDateTimes.autumnEquinox ).hour( 16 )
 		.minute( 0 )
 		.second( 0 )
 		.millisecond( 0 ) ;
 	delta = moment.duration( stDateTimes.autumnEquinox.diff( sunData.sunset ) ) ;
 
-	console.log( "Autumn equinox comput:" , stDateTimes.autumnEquinox , sunData.sunset , delta.toISOString() ) ;
+	//console.log( "Autumn equinox comput:" , stDateTimes.autumnEquinox , sunData.sunset , delta.toISOString() ) ;
 
 	if ( delta > 0 ) {
-		celebrationDays.autumnEquinox.add( 1 , "day" ) ;
+		celebrationDays.mabon.add( 1 , "day" ) ;
 	}
 
 	/*
@@ -335,7 +510,7 @@ SacredTimes.prototype.stYearCelebrationDays = function( utcYear ) {
 		.utcOffset( this.solarUtcOffset ) ;
 	delta = moment.duration( stDateTimes.samain.diff( sunData.nextMidnight ) ).subtract( 2 , "hours" ) ;
 
-	console.log( "Samain comput:" , stDateTimes.samain , sunData.nextMidnight , delta.toISOString() ) ;
+	//console.log( "Samain comput:" , stDateTimes.samain , sunData.nextMidnight , delta.toISOString() ) ;
 
 	if ( delta > 0 ) {
 		celebrationDays.samain.add( 1 , "day" ) ;
@@ -352,16 +527,16 @@ SacredTimes.prototype.stYearCelebrationDays = function( utcYear ) {
 		This is the sole celebration that can happened before its Sacred Time.
 	*/
 	sunData = this.utcLocalSun( stDateTimes.winterSolstice.toDate() ) ;
-	celebrationDays.winterSolstice = moment( stDateTimes.winterSolstice ).hour( 18 )
+	celebrationDays.yule = moment( stDateTimes.winterSolstice ).hour( 18 )
 		.minute( 0 )
 		.second( 0 )
 		.millisecond( 0 ) ;
 	delta = moment.duration( stDateTimes.winterSolstice.diff( sunData.sunrise ) ) ;
 
-	console.log( "Winter solstice comput:" , stDateTimes.winterSolstice , sunData.sunrise , delta.toISOString() ) ;
+	//console.log( "Winter solstice comput:" , stDateTimes.winterSolstice , sunData.sunrise , delta.toISOString() ) ;
 
 	if ( delta < 0 ) {
-		celebrationDays.winterSolstice.subtract( 1 , "day" ) ;
+		celebrationDays.yule.subtract( 1 , "day" ) ;
 	}
 
 	return celebrationDays ;
@@ -382,16 +557,17 @@ SacredTimes.prototype.utcLocalSun = function( dateTime ) {
 
 
 SacredTimes.prototype.computeSolarDateTime = function() {
-	console.log( "universalDateTime:" , this.universalDateTime ) ;
+	//console.log( "universalDateTime:" , this.universalDateTime ) ;
+
 	var sunData = this.utcLocalSun( this.universalDateTime.toDate() ) ,
 		universalNoon = moment( sunData.solarNoon ).hour( 12 )
 			.minute( 0 )
 			.second( 0 )
 			.millisecond( 0 ) ;
 
-	console.log( "sunData:" , sunData ) ;
+	//console.log( "sunData:" , sunData ) ;
+	//console.log( "universalNoon:" , universalNoon , sunData.solarNoon , universalNoon.diff( sunData.solarNoon ) ) ;
 
-	console.log( "universalNoon:" , universalNoon , sunData.solarNoon , universalNoon.diff( sunData.solarNoon ) ) ;
 	this.solarDelta = moment.duration( universalNoon.diff( sunData.solarNoon ) ) ;
 
 	// This modify the date
@@ -399,10 +575,103 @@ SacredTimes.prototype.computeSolarDateTime = function() {
 
 	// Instead, this modify the utcOffset
 	this.solarUtcOffset = this.durationToUtcOffset( this.solarDelta ) ;
-	console.log( 'solarUtcOffset:' , this.solarUtcOffset , 'solarDelta:' , this.solarDelta ) ;
+	//console.log( 'solarUtcOffset:' , this.solarUtcOffset , 'solarDelta:' , this.solarDelta ) ;
 	this.solarDateTime = moment( this.universalDateTime ).local()
 		.utcOffset( this.solarUtcOffset ) ;
-	console.log( "solarDateTime:" , this.solarDateTime ) ;
+	//console.log( "solarDateTime:" , this.solarDateTime ) ;
+} ;
+
+
+
+SacredTimes.prototype.getLuniSolarDateTime = function( dateTime ) {
+	if ( dateTime ) {
+		return ( new SacredTimes( dateTime ) ).getLuniSolarDateTime() ;
+	}
+
+	var year , moons , lunarMonth , newMoon , newLunarMonthDateTime ,
+		lunarMonthDay , newDayDateTime , dayMs , hour , minute , second ,
+		sunMoodHour , sunMoodMinute , sunData , altSunData , pseudoDateTime ;
+
+	year = this.luniSolarNewYear.year() ;
+
+	moons = lune.phase_range( this.luniSolarNewYearMoon.toDate() , this.solarDateTime.toDate() , lune.PHASE_NEW ) ;
+	newMoon = this.toSolar( moment( moons[ moons.length - 1 ] ) ) ;
+	newLunarMonthDateTime = this.toNextRisingSun( newMoon ) ;
+	lunarMonth = moons.length ;
+
+	if ( newLunarMonthDateTime > this.solarDateTime ) {
+		newMoon = this.toSolar( moment( moons[ moons.length - 2 ] ) ) ;
+		newLunarMonthDateTime = this.toNextRisingSun( newMoon ) ;
+		lunarMonth = moons.length - 1 ;
+	}
+
+	lunarMonthDay = Math.floor( this.solarDateTime.diff( newLunarMonthDateTime ) / 86400000 ) + 1 ;
+
+	newDayDateTime = moment( this.solarDateTime )
+		.hour( 4 )
+		.minute( 0 )
+		.second( 0 )
+		.millisecond( 0 ) ;
+
+	if ( this.solarDateTime.hour() < 4 ) {
+		newDayDateTime.subtract( 1 , "day" ) ;
+	}
+
+	//console.log( ">>>>>>" , lune.phase_range( this.luniSolarNewYearMoon.toDate() , this.solarDateTime.toDate() , lune.PHASE_NEW ) ) ;
+	console.log( "new lunar month dateTime" , newLunarMonthDateTime ) ;
+	console.log( "lunar month number" , lunarMonth ) ;
+	console.log( "lunar month day" , lunarMonthDay ) ;
+
+	dayMs = this.solarDateTime.diff( newDayDateTime ) ;
+
+	// 12-hours system
+	hour = Math.floor( dayMs / 7200000 ) + 1 ;
+	console.log( "12-hour" , hour ) ;
+
+	// 72-minute system
+	minute = Math.floor( dayMs / 100000 ) % 72 ;
+	console.log( "72-minute" , minute ) ;
+
+	// 100-second system
+	second = Math.floor( dayMs / 1000 ) % 100 ;
+	console.log( "100-second" , second ) ;
+
+
+	// Day sunMood
+	sunData = this.utcLocalSun( this.solarDateTime.toDate() ) ;
+
+	if ( this.solarDateTime < sunData.sunrise ) {
+		altSunData = this.utcLocalSun( moment( this.solarDateTime ).subtract( 1 , "day" )
+			.toDate() ) ;
+		sunMoodHour = -Math.floor( 1 + 12 * ( ( this.solarDateTime - altSunData.sunset ) / ( sunData.sunrise - altSunData.sunset ) ) ) ;
+		console.log( 'day sunMood' , sunMoodHour ) ;
+	}
+	else if ( this.solarDateTime >= sunData.sunrise && this.solarDateTime <= sunData.sunset ) {
+		sunMoodHour = Math.floor( 1 + 12 * ( ( this.solarDateTime - sunData.sunrise ) / ( sunData.sunset - sunData.sunrise ) ) ) ;
+		console.log( 'day sunMood' , sunMoodHour ) ;
+	}
+	else {
+		altSunData = this.utcLocalSun( moment( this.solarDateTime ).add( 1 , "day" )
+			.toDate() ) ;
+		sunMoodHour = Math.floor( 1 + 12 * ( ( this.solarDateTime - sunData.sunset ) / ( altSunData.sunrise - sunData.sunset ) ) ) ;
+		console.log( 'day sunMood' , sunMoodHour ) ;
+	}
+
+	pseudoDateTime = new PseudoDate( {
+		date: this.solarDateTime ,
+		year ,
+		month: lunarMonth ,
+		day: lunarMonthDay ,
+		hour ,
+		minute ,
+		second ,
+		sunMoodHour ,
+		sunMoodMinute
+	} ) ;
+
+	console.log( "pseudo dateTime" , pseudoDateTime ) ;
+
+	return pseudoDateTime ;
 } ;
 
 
@@ -525,6 +794,8 @@ SacredTimes.prototype.toMode = function( dateTimes , mode = 'legal' ) {
 		case 'utc' : return this.toUtc( dateTimes ) ;
 		case 'legal' : return this.toLegal( dateTimes ) ;
 		case 'solar' : return this.toSolar( dateTimes ) ;
+		case 'luniSolar' :
+		case 'lunisolar' : return this.toLuniSolar( dateTimes ) ;
 		default : return this.toLegal( dateTimes ) ;
 	}
 } ;
@@ -577,21 +848,37 @@ SacredTimes.prototype.toSolar = function( dateTimes ) {
 
 
 
-SacredTimes.prototype.toNextDay = function( dateTimes ) {
-	var momentDateTimes = {} ;
+// Map an object of UTC dates+times to an object of Solar dates+times
+SacredTimes.prototype.toLuniSolar = function( dateTimes ) {
+	if ( ( dateTimes instanceof moment ) || ( dateTimes instanceof Date ) ) {
+		return ( new SacredTimes( dateTimes ) ).getLuniSolarDateTime() ;
+	}
 
-	Object.keys( dateTimes ).forEach( name => {
-		momentDateTimes[ name ] = moment( dateTimes[ name ] ).hour( 12 )
-			.minute( 0 )
-			.second( 0 )
-			.millisecond( 0 ) ;
+	var pseudoDateTimes = {} ;
 
-		if ( dateTimes[ name ].hour() >= 6 ) {
-			momentDateTimes[ name ].add( 1 , "day" ) ;
-		}
-	} ) ;
+	Object.keys( dateTimes ).forEach( name => pseudoDateTimes[ name ] = ( new SacredTimes( dateTimes[ name ] ) ).getLuniSolarDateTime() ) ;
 
-	return momentDateTimes ;
+	return pseudoDateTimes ;
+} ;
+
+
+
+// /!\ Unlike other method, it only support one dateTime, not an object of dateTime
+SacredTimes.prototype.toNextRisingSun = function( dateTime ) {
+	var sunData = this.utcLocalSun( dateTime.toDate() ) ;
+
+	var risingSunDateTime = moment( dateTime ).hour( 4 )
+		.minute( 0 )
+		.second( 0 )
+		.millisecond( 0 ) ;
+
+	var delta = moment.duration( dateTime.diff( sunData.sunrise ) ).subtract( 2 , "hours" ) ;
+
+	if ( delta.subtract( 2 , "hours" ) > 0 ) {
+		risingSunDateTime.add( 1 , "day" ) ;
+	}
+
+	return risingSunDateTime ;
 } ;
 
 
@@ -603,7 +890,7 @@ SacredTimes.prototype.durationToUtcOffset = function( duration ) {
 } ;
 
 
-},{"./Event.js":1,"lune":4,"moment":6,"moment/locale/fr":5,"seasons-dates":7,"suncalc":8}],3:[function(require,module,exports){
+},{"./Event.js":1,"./PseudoDate.js":2,"lune":5,"moment":7,"moment/locale/fr":6,"seasons-dates":8,"suncalc":9}],4:[function(require,module,exports){
 'use strict'
 
 function fromDate (date) {
@@ -617,7 +904,7 @@ function toDate (julian) {
 exports.fromDate = fromDate
 exports.toDate = toDate
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 /**
  * This library calculates the current phase of the moon
  * as well as finds the dates of the recent moon phases.
@@ -984,7 +1271,7 @@ exports.phase = phase
 exports.phase_hunt = phase_hunt
 exports.phase_range = phase_range
 
-},{"./julian":3}],5:[function(require,module,exports){
+},{"./julian":4}],6:[function(require,module,exports){
 //! moment.js locale configuration
 
 ;(function (global, factory) {
@@ -1068,7 +1355,7 @@ exports.phase_range = phase_range
 
 })));
 
-},{"../moment":6}],6:[function(require,module,exports){
+},{"../moment":7}],7:[function(require,module,exports){
 //! moment.js
 
 ;(function (global, factory) {
@@ -5576,7 +5863,7 @@ exports.phase_range = phase_range
 
 })));
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 function Seasons(year) {
     var k = Math.PI/180.0;
     var y = (year - 2000.0)/1000.0;
@@ -5697,7 +5984,7 @@ function Seasons(year) {
 
 module.exports = Seasons;
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 /*
  (c) 2011-2015, Vladimir Agafonkin
  SunCalc is a JavaScript library for calculating sun/moon position and light phases.
@@ -6009,5 +6296,5 @@ else window.SunCalc = SunCalc;
 
 }());
 
-},{}]},{},[2])(2)
+},{}]},{},[3])(3)
 });

@@ -18,14 +18,14 @@ LANG .fr = {
 	lugnasadSacredTime: "Lugnasad" ,
 	samainSacredTime: "Samain" ,
 	
-	springEquinoxCelebrationDay: "Fête de l'Équinoxe de Printemps" ,
-	summerSolsticeCelebrationDay: "Fête du Solstice d'Été" ,
-	autumnEquinoxCelebrationDay: "Fête de l'Équinoxe d'Automne" ,
-	winterSolsticeCelebrationDay: "Fête du Solstice d'Hiver" ,
 	imbolcCelebrationDay: "Fête d'Imbolc" ,
+	ostaraCelebrationDay: "Fête d'Ostara" ,
 	beltaineCelebrationDay: "Fête de Beltaine" ,
+	lithaCelebrationDay: "Fête de Litha" ,
 	lugnasadCelebrationDay: "Fête de Lugnasad" ,
+	mabonCelebrationDay: "Fête de Mabon" ,
 	samainCelebrationDay: "Fête de Samain" ,
+	yuleCelebrationDay: "Fête de Yule" ,
 	
 	_fullDateFormat: 'dddd D MMMM YYYY' ,
 	_middleDateTimeFormat: 'ddd D MMM YYYY à HH:mm'

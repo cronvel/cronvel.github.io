@@ -91,7 +91,7 @@ item {
 	display: inline-block;
 	width: 15vmin;
 	height: 15vmin;
-	margin: 0;
+	margin: 0 1vmin;
 	padding: 0;
 	background-size: cover;
 	cursor: pointer;
@@ -99,13 +99,17 @@ item {
 	transition: transform 0.5s , opacity 0.5s;
 }
 
+item.legal {
+	background-image: url('images/courthouse.png');
+	opacity: 0.4;
+}
+
 item.solar {
 	background-image: url('images/sun.png');
 }
 
-item.legal {
-	background-image: url('images/courthouse.png');
-	opacity: 0.4;
+item.lunisolar {
+	background-image: url('images/mechanisms.png');
 }
 
 item:hover {
