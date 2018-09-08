@@ -24,9 +24,18 @@ main {
 	height: 80vh;
 	display: block;
 	/*border: solid #f55 1px;*/
-	margin: 0;
+	margin: 0 auto;
 	padding: 0;
 	overflow: hidden;
+}
+
+menu {
+	display: block;
+	width: 100vmin;
+	height: 20vh;
+	text-align: center;
+	margin: 0 auto;
+	padding: 0;
 }
 
 big-time {
@@ -76,15 +85,6 @@ planet {
 planet svg {
 	width: 100%;
 	height: auto;
-}
-
-menu {
-	display: block;
-	width: 100vmin;
-	height: 20vh;
-	text-align: center;
-	margin: 0;
-	padding: 0;
 }
 
 item {
