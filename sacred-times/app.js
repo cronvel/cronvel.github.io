@@ -68,7 +68,7 @@ domKit.ready( () => {
 		phase: 0.5
 	} ) ;
 	
-	this.switchToMode( config.mode ) ;
+	switchToMode( config.mode ) ;
 	
 	refresh() ;
 } ) ;
