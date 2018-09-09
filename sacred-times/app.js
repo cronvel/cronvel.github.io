@@ -138,7 +138,10 @@ function populateEvents( events ) {
 	events.forEach( event => {
 		var $p = document.createElement( 'p' ) ;
 		$p.textContent = _( event.name ) + ': ' + event.date.locale( config.lang ).format( _( '_middleDateTimeFormat' ) ) ;
+		
 		if ( event.isMajor ) { $p.classList.add( 'major' ) ; }
+		//else if ( ! event.isUpcoming ) { $p.classList.add( 'past' ) ; }
+		
 		page.$events.appendChild( $p ) ;
 	} ) ;
 }

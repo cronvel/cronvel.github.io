@@ -180,10 +180,10 @@ const moonName = [
 	'Septima' , // 7
 	'Octavia' , // 8
 	'Nova' , // 9
-	'Decalia' , // 10
+	'Decuria' , // 10
 	'Ondina' , // 11
 	'Dominica' , // 12
-	'Théresa' // 13
+	'Thérésa' // 13
 ] ;
 
 
@@ -712,15 +712,15 @@ SacredTimes.prototype.getSunUpcomingEvents = function( mode = 'legal' ) {
 	var dateTime = this.universalDateTime ,
 		events = [] ,
 		sunData ;
-	
+
 	sunData = this.utcLocalSun( dateTime ) ;
 	events.push( new Event( 'sunrise' , sunData.sunrise , sunData.sunrise >= dateTime , false ) ) ;
 	events.push( new Event( 'sunset' , sunData.sunset , sunData.sunset >= dateTime , false ) ) ;
-	
+
 	sunData = this.utcLocalSun( moment( dateTime ).add( 1 , "day" ) ) ;
 	events.push( new Event( 'sunrise' , sunData.sunrise , sunData.sunrise >= dateTime , false ) ) ;
 	events.push( new Event( 'sunset' , sunData.sunset , sunData.sunset >= dateTime , false ) ) ;
-	
+
 	events = Event.filter( events , moment( dateTime ).subtract( 2 , "hour" ) ) ;
 	if ( events.length > 2 ) { events.length = 2 ; }
 
@@ -735,15 +735,15 @@ SacredTimes.prototype.getMoonUpcomingEvents = function( mode = 'legal' ) {
 	var dateTime = this.universalDateTime ,
 		events = [] ,
 		moonData ;
-	
+
 	moonData = this.utcLocalMoon( dateTime ) ;
 	events.push( new Event( 'moonrise' , moonData.rise , moonData.rise >= dateTime , false ) ) ;
 	events.push( new Event( 'moonset' , moonData.set , moonData.set >= dateTime , false ) ) ;
-	
+
 	moonData = this.utcLocalMoon( moment( dateTime ).add( 1 , "day" ) ) ;
 	events.push( new Event( 'moonrise' , moonData.rise , moonData.rise >= dateTime , false ) ) ;
 	events.push( new Event( 'moonset' , moonData.set , moonData.set >= dateTime , false ) ) ;
-	
+
 	events = Event.filter( events , moment( dateTime ).subtract( 2 , "hour" ) ) ;
 	if ( events.length > 2 ) { events.length = 2 ; }
 
