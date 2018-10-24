@@ -11,8 +11,8 @@ LANG.en = {
 	moonrise: "Moonrise" ,
 	moonset: "Moonset" ,
 	
-	newMoon: "New Lune" ,
-	fullMoon: "Full Lune" ,
+	newMoon: "New Moon" ,
+	fullMoon: "Full Moon" ,
 	firstQuarterMoon: "First Quarter" ,
 	lastQuarterMoon: "Last Quarter" ,
 
