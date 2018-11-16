@@ -118,6 +118,36 @@ item {
 	transition: transform 0.5s , opacity 0.5s;
 }
 
+item:hover {
+	transform: scale(1.25);
+	opacity: 1;
+}
+
+item.active {
+	opacity: 1;
+}
+
+item.time {
+	font-size: 3vmin;
+	width: auto;
+	height: auto;
+	margin: 0 1vmin;
+	padding: 0;
+}
+
+item.backward {
+	float: left;
+}
+
+item.forward {
+	float: right;
+}
+
+item.legal {
+	background-image: url('images/courthouse.png');
+	opacity: 0.4;
+}
+
 item.legal {
 	background-image: url('images/courthouse.png');
 	opacity: 0.4;
@@ -129,14 +159,5 @@ item.solar {
 
 item.lunisolar {
 	background-image: url('images/mechanisms.png');
-}
-
-item:hover {
-	transform: scale(1.25);
-	opacity: 1;
-}
-
-item.active {
-	opacity: 1;
 }
 

@@ -32,6 +32,7 @@ var LANG = {} ,
 	page = {} ,
 	config = {
 		mode: 'solar' ,
+		dayOffset: 0 ,
 		displaySeconds: false ,
 		lang: 'fr'
 	} ;
@@ -43,6 +44,9 @@ domKit.appendJs( "lang/" + config.lang + ".js" ) ;
 
 domKit.ready( () => {
 	loadConfig() ;
+	
+	// Always reset offset to NOW
+	config.dayOffset = 0 ;
 	
 	page.refreshTimer = null ;
 	page.lastHourMin = null ;
@@ -57,6 +61,31 @@ domKit.ready( () => {
 	page.$solarModeButton.addEventListener( 'click' , switchToSolarMode ) ;
 	page.$lunisolarModeButton = document.querySelector( 'item.lunisolar' ) ;
 	page.$lunisolarModeButton.addEventListener( 'click' , switchToLuniSolarMode ) ;
+	
+	page.$backward = document.querySelector( 'item.backward' ) ;
+	page.$backward.addEventListener( 'click' , event => {
+		if ( event.detail === 3 ) {
+			adjustOffset( -365 ) ;
+		}
+		else if ( event.detail === 2 ) {
+			adjustOffset( -30 ) ;
+		}
+		else {
+			adjustOffset( -1 ) ;
+		}
+	} ) ;
+	page.$forward = document.querySelector( 'item.forward' ) ;
+	page.$forward.addEventListener( 'click' , event => {
+		if ( event.detail === 3 ) {
+			adjustOffset( 365 ) ;
+		}
+		else if ( event.detail === 2 ) {
+			adjustOffset( 30 ) ;
+		}
+		else {
+			adjustOffset( 1 ) ;
+		}
+	} ) ;
 	
 	page.moon = new SvgPhase( {
 		container: page.$planet ,
@@ -81,7 +110,14 @@ function refresh() {
 		page.refreshTimer = null ;
 	}
 	
-	var sacredTimes = new SacredTimes() ,
+	var dateTime = new Date() ;	// '2017-05-01' ) ;
+	
+	if ( config.dayOffset ) {
+		dateTime = SacredTimes.moment( dateTime ) ;
+		dateTime.add( config.dayOffset , "day" ) ;
+	}
+	
+	var sacredTimes = new SacredTimes( dateTime ) ,
 		dateTime = getModeDateTime( sacredTimes ) ,
 		currentHourMin = dateTime.format( 'HH:mm' ) ;
 	
@@ -185,6 +221,12 @@ function turnOffButtons() {
 	page.$legalModeButton.classList.remove( 'active' ) ;
 	page.$solarModeButton.classList.remove( 'active' ) ;
 	page.$lunisolarModeButton.classList.remove( 'active' ) ;
+}
+
+function adjustOffset( days ) {
+	config.dayOffset += days ;
+	fullRefresh() ;
+	saveConfig() ;
 }
 
 
