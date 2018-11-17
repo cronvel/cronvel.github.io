@@ -51,6 +51,7 @@ big-time {
 	text-align: center;
 	margin: 0.1em 0.1em 0 0.1em;
 	padding: 0;
+	cursor: pointer;
 }
 
 tiny-date {
@@ -60,6 +61,7 @@ tiny-date {
 	text-align: right;
 	margin: 0 0.5em 1vmin 0.5em;
 	padding: 0;
+	cursor: pointer;
 }
 
 events {

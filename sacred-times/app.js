@@ -69,18 +69,19 @@ domKit.ready( () => {
 		}
 		
 		if ( event.detail === 3 ) {
-			config.fixedDateTime.add( 1 , "month" ) ;
-			config.fixedDateTime.subtract( 1 , "year" ) ;
+			config.fixedDateTime.add( 1 , "hour" ) ;
+			config.fixedDateTime.subtract( 1 , "minute" ) ;
 		}
 		else if ( event.detail === 2 ) {
 			config.fixedDateTime.add( 1 , "day" ) ;
-			config.fixedDateTime.subtract( 1 , "month" ) ;
+			config.fixedDateTime.subtract( 1 , "hour" ) ;
 		}
 		else {
 			config.fixedDateTime.subtract( 1 , "day" ) ;
 		}
 		
-		fullRefresh() ;
+		debouncedFullRefresh() ;
+
 	} ) ;
 
 	page.$backwardMonth = document.querySelector( 'timeleap.backward.month' ) ;
@@ -89,18 +90,15 @@ domKit.ready( () => {
 			config.fixedDateTime = SacredTimes.moment() ;
 		}
 		
-		if ( event.detail === 3 ) {
-			config.fixedDateTime.subtract( 9 , "year" ) ;
-		}
-		else if ( event.detail === 2 ) {
+		if ( event.detail === 2 ) {
 			config.fixedDateTime.add( 1 , "month" ) ;
-			config.fixedDateTime.subtract( 1 , "year" ) ;
+			config.fixedDateTime.subtract( 14 , "day" ) ;
 		}
 		else {
 			config.fixedDateTime.subtract( 1 , "month" ) ;
 		}
 		
-		fullRefresh() ;
+		debouncedFullRefresh() ;
 	} ) ;
 
 	page.$backwardYear = document.querySelector( 'timeleap.backward.year' ) ;
@@ -119,7 +117,7 @@ domKit.ready( () => {
 			config.fixedDateTime.subtract( 1 , "year" ) ;
 		}
 		
-		fullRefresh() ;
+		debouncedFullRefresh() ;
 	} ) ;
 
 	page.$forwardDay = document.querySelector( 'timeleap.forward.day' ) ;
@@ -129,18 +127,18 @@ domKit.ready( () => {
 		}
 		
 		if ( event.detail === 3 ) {
-			config.fixedDateTime.subtract( 1 , "month" ) ;
-			config.fixedDateTime.add( 1 , "year" ) ;
+			config.fixedDateTime.subtract( 1 , "hour" ) ;
+			config.fixedDateTime.add( 1 , "minute" ) ;
 		}
 		else if ( event.detail === 2 ) {
 			config.fixedDateTime.subtract( 1 , "day" ) ;
-			config.fixedDateTime.add( 1 , "month" ) ;
+			config.fixedDateTime.add( 1 , "hour" ) ;
 		}
 		else {
 			config.fixedDateTime.add( 1 , "day" ) ;
 		}
 		
-		fullRefresh() ;
+		debouncedFullRefresh() ;
 	} ) ;
 	
 	page.$forwardMonth = document.querySelector( 'timeleap.forward.month' ) ;
@@ -149,18 +147,15 @@ domKit.ready( () => {
 			config.fixedDateTime = SacredTimes.moment() ;
 		}
 		
-		if ( event.detail === 3 ) {
-			config.fixedDateTime.add( 9 , "year" ) ;
-		}
-		else if ( event.detail === 2 ) {
+		if ( event.detail === 2 ) {
 			config.fixedDateTime.subtract( 1 , "month" ) ;
-			config.fixedDateTime.add( 1 , "year" ) ;
+			config.fixedDateTime.add( 14 , "day" ) ;
 		}
 		else {
 			config.fixedDateTime.add( 1 , "month" ) ;
 		}
 		
-		fullRefresh() ;
+		debouncedFullRefresh() ;
 	} ) ;
 	
 	page.$forwardYear = document.querySelector( 'timeleap.forward.year' ) ;
@@ -179,7 +174,7 @@ domKit.ready( () => {
 			config.fixedDateTime.add( 1 , "year" ) ;
 		}
 		
-		fullRefresh() ;
+		debouncedFullRefresh() ;
 	} ) ;
 	
 	page.moon = new SvgPhase( {
@@ -192,6 +187,16 @@ domKit.ready( () => {
 		phase: 0.5
 	} ) ;
 	
+	page.$bigTime.addEventListener( 'click' , event => {
+		config.fixedDateTime = null ;
+		fullRefresh() ;
+	} ) ;
+	
+	page.$tinyDate.addEventListener( 'click' , event => {
+		config.fixedDateTime = null ;
+		fullRefresh() ;
+	} ) ;
+
 	switchToMode( config.mode ) ;
 	
 	refresh() ;
@@ -247,6 +252,19 @@ function fullRefresh() {
 	page.lastHourMin = null ;   // Force refresh all
 	refresh() ;
 }
+
+
+
+function debouncedFullRefresh() {
+	page.lastHourMin = null ;   // Force refresh all
+
+	if ( page.refreshTimer ) {
+		clearTimeout( page.refreshTimer ) ;
+		page.refreshTimer = null ;
+	}
+
+	page.refreshTimer = setTimeout( refresh , 250 ) ;
+}	
 
 
 
