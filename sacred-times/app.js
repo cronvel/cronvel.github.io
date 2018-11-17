@@ -32,7 +32,7 @@ var LANG = {} ,
 	page = {} ,
 	config = {
 		mode: 'solar' ,
-		dayOffset: 0 ,
+		fixedDateTime: null ,
 		displaySeconds: false ,
 		lang: 'fr'
 	} ;
@@ -45,8 +45,8 @@ domKit.appendJs( "lang/" + config.lang + ".js" ) ;
 domKit.ready( () => {
 	loadConfig() ;
 	
-	// Always reset offset to NOW
-	config.dayOffset = 0 ;
+	// Always reset to NOW
+	config.fixedDateTime = null ;
 	
 	page.refreshTimer = null ;
 	page.lastHourMin = null ;
@@ -62,29 +62,124 @@ domKit.ready( () => {
 	page.$lunisolarModeButton = document.querySelector( 'item.lunisolar' ) ;
 	page.$lunisolarModeButton.addEventListener( 'click' , switchToLuniSolarMode ) ;
 	
-	page.$backward = document.querySelector( 'item.backward' ) ;
-	page.$backward.addEventListener( 'click' , event => {
+	page.$backwardDay = document.querySelector( 'timeleap.backward.day' ) ;
+	page.$backwardDay.addEventListener( 'click' , event => {
+		if ( ! config.fixedDateTime ) {
+			config.fixedDateTime = SacredTimes.moment() ;
+		}
+		
 		if ( event.detail === 3 ) {
-			adjustOffset( -365 ) ;
+			config.fixedDateTime.add( 1 , "month" ) ;
+			config.fixedDateTime.subtract( 1 , "year" ) ;
 		}
 		else if ( event.detail === 2 ) {
-			adjustOffset( -30 ) ;
+			config.fixedDateTime.add( 1 , "day" ) ;
+			config.fixedDateTime.subtract( 1 , "month" ) ;
 		}
 		else {
-			adjustOffset( -1 ) ;
+			config.fixedDateTime.subtract( 1 , "day" ) ;
 		}
+		
+		fullRefresh() ;
 	} ) ;
-	page.$forward = document.querySelector( 'item.forward' ) ;
-	page.$forward.addEventListener( 'click' , event => {
+
+	page.$backwardMonth = document.querySelector( 'timeleap.backward.month' ) ;
+	page.$backwardMonth.addEventListener( 'click' , event => {
+		if ( ! config.fixedDateTime ) {
+			config.fixedDateTime = SacredTimes.moment() ;
+		}
+		
 		if ( event.detail === 3 ) {
-			adjustOffset( 365 ) ;
+			config.fixedDateTime.subtract( 9 , "year" ) ;
 		}
 		else if ( event.detail === 2 ) {
-			adjustOffset( 30 ) ;
+			config.fixedDateTime.add( 1 , "month" ) ;
+			config.fixedDateTime.subtract( 1 , "year" ) ;
 		}
 		else {
-			adjustOffset( 1 ) ;
+			config.fixedDateTime.subtract( 1 , "month" ) ;
 		}
+		
+		fullRefresh() ;
+	} ) ;
+
+	page.$backwardYear = document.querySelector( 'timeleap.backward.year' ) ;
+	page.$backwardYear.addEventListener( 'click' , event => {
+		if ( ! config.fixedDateTime ) {
+			config.fixedDateTime = SacredTimes.moment() ;
+		}
+		
+		if ( event.detail === 3 ) {
+			config.fixedDateTime.subtract( 90 , "year" ) ;
+		}
+		else if ( event.detail === 2 ) {
+			config.fixedDateTime.subtract( 9 , "year" ) ;
+		}
+		else {
+			config.fixedDateTime.subtract( 1 , "year" ) ;
+		}
+		
+		fullRefresh() ;
+	} ) ;
+
+	page.$forwardDay = document.querySelector( 'timeleap.forward.day' ) ;
+	page.$forwardDay.addEventListener( 'click' , event => {
+		if ( ! config.fixedDateTime ) {
+			config.fixedDateTime = SacredTimes.moment() ;
+		}
+		
+		if ( event.detail === 3 ) {
+			config.fixedDateTime.subtract( 1 , "month" ) ;
+			config.fixedDateTime.add( 1 , "year" ) ;
+		}
+		else if ( event.detail === 2 ) {
+			config.fixedDateTime.subtract( 1 , "day" ) ;
+			config.fixedDateTime.add( 1 , "month" ) ;
+		}
+		else {
+			config.fixedDateTime.add( 1 , "day" ) ;
+		}
+		
+		fullRefresh() ;
+	} ) ;
+	
+	page.$forwardMonth = document.querySelector( 'timeleap.forward.month' ) ;
+	page.$forwardMonth.addEventListener( 'click' , event => {
+		if ( ! config.fixedDateTime ) {
+			config.fixedDateTime = SacredTimes.moment() ;
+		}
+		
+		if ( event.detail === 3 ) {
+			config.fixedDateTime.add( 9 , "year" ) ;
+		}
+		else if ( event.detail === 2 ) {
+			config.fixedDateTime.subtract( 1 , "month" ) ;
+			config.fixedDateTime.add( 1 , "year" ) ;
+		}
+		else {
+			config.fixedDateTime.add( 1 , "month" ) ;
+		}
+		
+		fullRefresh() ;
+	} ) ;
+	
+	page.$forwardYear = document.querySelector( 'timeleap.forward.year' ) ;
+	page.$forwardYear.addEventListener( 'click' , event => {
+		if ( ! config.fixedDateTime ) {
+			config.fixedDateTime = SacredTimes.moment() ;
+		}
+		
+		if ( event.detail === 3 ) {
+			config.fixedDateTime.add( 90 , "year" ) ;
+		}
+		else if ( event.detail === 2 ) {
+			config.fixedDateTime.add( 9 , "year" ) ;
+		}
+		else {
+			config.fixedDateTime.add( 1 , "year" ) ;
+		}
+		
+		fullRefresh() ;
 	} ) ;
 	
 	page.moon = new SvgPhase( {
@@ -110,12 +205,7 @@ function refresh() {
 		page.refreshTimer = null ;
 	}
 	
-	var dateTime = new Date() ;	// '2017-05-01' ) ;
-	
-	if ( config.dayOffset ) {
-		dateTime = SacredTimes.moment( dateTime ) ;
-		dateTime.add( config.dayOffset , "day" ) ;
-	}
+	var dateTime = config.fixedDateTime || new Date() ;
 	
 	var sacredTimes = new SacredTimes( dateTime ) ,
 		dateTime = getModeDateTime( sacredTimes ) ,
@@ -221,12 +311,6 @@ function turnOffButtons() {
 	page.$legalModeButton.classList.remove( 'active' ) ;
 	page.$solarModeButton.classList.remove( 'active' ) ;
 	page.$lunisolarModeButton.classList.remove( 'active' ) ;
-}
-
-function adjustOffset( days ) {
-	config.dayOffset += days ;
-	fullRefresh() ;
-	saveConfig() ;
 }
 
 
