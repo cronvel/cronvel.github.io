@@ -160,12 +160,6 @@ item.active {
 
 item.legal {
 	background-image: url('images/courthouse.png');
-	opacity: 0.4;
-}
-
-item.legal {
-	background-image: url('images/courthouse.png');
-	opacity: 0.4;
 }
 
 item.solar {
